@@ -20,7 +20,7 @@ pipeline {
             steps {
                 script {
                     docker.image("${DOCKER_IMAGE}:${env.BUILD_ID}").inside {
-                        sh 'php artisan test'
+                        sh './vendor/bin/phpunit --configuration phpunit.xml'
                     }
                 }
             }
