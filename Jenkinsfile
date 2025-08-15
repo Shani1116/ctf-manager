@@ -20,9 +20,11 @@ pipeline {
             steps {
                 script {
                     docker.image("${DOCKER_IMAGE}:${env.BUILD_ID}").inside {
+                    // Ensure the environment is set up correctly
+                    sh 'cp .env.example .env'
 
-                    // Set application encryption key
-                    //sh 'php artisan key:generate --force'
+                    //Set application encryption key
+                    sh 'php artisan key:generate --force'
             
                     // Run tests with the correct PHPUnit version
                     sh './vendor/bin/phpunit --configuration phpunit.xml'
