@@ -22,6 +22,9 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Set working directory
 WORKDIR /var/www/html
 
+# Fix git ownership before copying files
+RUN git config --global --add safe.directory /var/www/html
+
 # Create SQLite database directory
 RUN mkdir -p /var/www/html/database/db \
     && touch /var/www/html/database/db/database.sqlite \
@@ -36,7 +39,7 @@ RUN composer install --no-dev --optimize-autoloader
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
+    && chmod -R 755 /var/www/html/storage
 
 # Expose port 8000 and start php-fpm server
 EXPOSE 8000
