@@ -17,8 +17,9 @@ RUN apt-get update && apt-get install -y \
 RUN docker-php-ext-install pdo_sqlite mbstring exif pcntl bcmath gd
 
 # Copy env file
-COPY .env.example .env &&
-    php artisan key:generate
+COPY .env.example .env
+
+RUN php artisan key:generate
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
