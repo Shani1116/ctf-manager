@@ -20,6 +20,10 @@ pipeline {
             steps {
                 script {
                     docker.image("${DOCKER_IMAGE}:${env.BUILD_ID}").inside {
+                        // Install dev dependencies (including PHPUnit)
+                        sh 'composer install --dev --optimize-autoloader'
+                
+                        // Run tests with the correct PHPUnit version
                         sh './vendor/bin/phpunit --configuration phpunit.xml'
                     }
                 }
