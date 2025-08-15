@@ -17,7 +17,8 @@ RUN apt-get update && apt-get install -y \
 RUN docker-php-ext-install pdo_sqlite mbstring exif pcntl bcmath gd
 
 # Copy env file
-COPY .env.example .env
+COPY .env.example .env &&
+    php artisan key:generate
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -38,7 +39,7 @@ RUN mkdir -p /var/www/html/database/db \
 COPY . .
 
 # Install dependencies
-RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+RUN composer install --dev --optimize-autoloader --ignore-platform-reqs
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
