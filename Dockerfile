@@ -1,5 +1,5 @@
 # Use official PHP image with necessary extensions
-FROM php:7.2-cli-bookworm
+FROM php:8.2-cli
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
