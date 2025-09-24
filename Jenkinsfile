@@ -2,6 +2,7 @@ pipeline {
     agent any
     environment {
         DOCKER_IMAGE = "ctf-manager"
+        SCANNER_HOME = tool 'SonarScanner'
     }
     stages {
         stage('Checkout') {
@@ -29,6 +30,23 @@ pipeline {
                     // Run tests with the correct PHPUnit version
                     sh './vendor/bin/phpunit --configuration phpunit.xml'
                     }
+                }
+            }
+        }
+        stage('Code Quality') {
+            steps {
+                withSonarQubeEnv('Sonarcloud') {
+                    script {
+                        docker.image("${DOCKER_IMAGE}:${env.BUILD_ID}").inside {
+                            sh """
+                                ${SCANNER_HOME}/bin/sonar-scanner \
+                                -Dsonar.projectKey=Shani1116_ctf-manager \
+                                -Dsonar.organization=shani1116 \
+                                -Dsonar.login=${SONAR_TOKEN} \
+                                -Dsonar.host.url=https://sonarcloud.io
+                            """
+                        }
+                    }  
                 }
             }
         }
