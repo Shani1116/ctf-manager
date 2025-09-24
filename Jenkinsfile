@@ -48,5 +48,22 @@ pipeline {
                 }
             }
         }
+        stage('Security') {
+            steps {
+                script {
+                    docker.image("${DOCKER_IMAGE}:${env.BUILD_ID}").inside {
+                        // Run security analysis with the correct PHPStan version
+                        sh 'composer --version'
+                        sh 'composer audit || true'
+                    }
+
+                    //Run Trivy scan
+                    sh """
+                        trivy image --exit-code 0 --severity LOW,MEDIUM,HIGH,CRITICAL ${DOCKER_IMAGE}:${env.BUILD_ID}
+                        trivy image --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_IMAGE}:${env.BUILD_ID}
+                    """
+                }
+            }
+        }
     }
 }
