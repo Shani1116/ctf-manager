@@ -37,15 +37,13 @@ pipeline {
             steps {
                 withSonarQubeEnv('Sonarcloud') {
                     script {
-                        docker.image("${DOCKER_IMAGE}:${env.BUILD_ID}").inside {
-                            sh """
-                                ${SCANNER_HOME}/bin/sonar-scanner \
-                                -Dsonar.projectKey=Shani1116_ctf-manager \
-                                -Dsonar.organization=shani1116 \
-                                -Dsonar.login=${SONAR_TOKEN} \
-                                -Dsonar.host.url=https://sonarcloud.io
-                            """
-                        }
+                        sh """
+                            ${SCANNER_HOME}/bin/sonar-scanner \
+                            -Dsonar.projectKey=Shani1116_ctf-manager \
+                            -Dsonar.organization=shani1116 \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=https://sonarcloud.io
+                        """
                     }  
                 }
             }
