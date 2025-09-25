@@ -26,7 +26,7 @@ resource "aws_security_group" "staging_sg" {
 
 resource "aws_instance" "staging" {
   ami           = "ami-0279a86684f669718" # Ubuntu 24.04 LTS in ap-southeast-2
-  instance_type = "t2.micro" 
+  instance_type = "t3.micro" 
   key_name      = aws_key_pair.jenkins.key_name
   security_groups = [aws_security_group.staging_sg.name]
 
