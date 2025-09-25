@@ -112,7 +112,7 @@ pipeline {
                             ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} '
                                 docker rm -f ctf-manager-staging || true &&
                                 docker pull ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/ctf-manager:latest
-                                docker run -d --name ctf-manager-staging -p 8000:8000 <dockerhub-username>/ctf-manager:latest
+                                docker run -d --name ctf-manager-staging -p 8000:8000 ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/ctf-manager:latest
                             '
                         """
                     }
