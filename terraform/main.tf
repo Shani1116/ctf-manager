@@ -4,7 +4,7 @@ provider "aws" {
 
 resource "aws_key_pair" "jenkins" {
   key_name   = "jenkins-key"
-  public_key = file("C:/Users/Shanika Perera/.ssh/jenkins.pub")
+  public_key = file("~/.ssh/jenkins.pub")
 }
 
 resource "aws_security_group" "staging_sg" {
