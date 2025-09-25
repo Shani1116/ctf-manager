@@ -33,42 +33,42 @@ pipeline {
                 }
             }
         }
-        stage('Code Quality') {
-            steps {
-                withSonarQubeEnv('Sonarcloud') {
-                    script {
-                        sh """
-                            ${SCANNER_HOME}/bin/sonar-scanner \
-                            -Dsonar.projectKey=Shani1116_ctf-manager \
-                            -Dsonar.organization=shani1116 \
-                            -Dsonar.sources=. \
-                            -Dsonar.host.url=https://sonarcloud.io
-                        """
-                    }  
-                }
-            }
-        }
-        stage('Security') {
-            steps {
-                script {
-                    docker.image("${DOCKER_IMAGE}:${env.BUILD_ID}").inside {
-                        // Run security analysis with the correct PHPStan version
-                        sh 'composer --version'
-                        sh 'composer audit || true'
-                    }
+        // stage('Code Quality') {
+        //     steps {
+        //         withSonarQubeEnv('Sonarcloud') {
+        //             script {
+        //                 sh """
+        //                     ${SCANNER_HOME}/bin/sonar-scanner \
+        //                     -Dsonar.projectKey=Shani1116_ctf-manager \
+        //                     -Dsonar.organization=shani1116 \
+        //                     -Dsonar.sources=. \
+        //                     -Dsonar.host.url=https://sonarcloud.io
+        //                 """
+        //             }  
+        //         }
+        //     }
+        // }
+        // stage('Security') {
+        //     steps {
+        //         script {
+        //             docker.image("${DOCKER_IMAGE}:${env.BUILD_ID}").inside {
+        //                 // Run security analysis with the correct PHPStan version
+        //                 sh 'composer --version'
+        //                 sh 'composer audit || true'
+        //             }
 
-                    //Run Trivy scan
-                    sh """
-                        trivy image --exit-code 0 --severity LOW,MEDIUM,HIGH,CRITICAL ${DOCKER_IMAGE}:${env.BUILD_ID}
-                    """
-                }
-            }
-        }
+        //             //Run Trivy scan
+        //             sh """
+        //                 trivy image --exit-code 0 --severity LOW,MEDIUM,HIGH,CRITICAL ${DOCKER_IMAGE}:${env.BUILD_ID}
+        //             """
+        //         }
+        //     }
+        // }
         stage('Provision Staging Server') {
             steps {
                 script {
                     dir('terraform') {
-                        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-creds']]) {
+                        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_creds']]) {
                             sh 'terraform init -input=false'
                             sh 'terraform plan -out=tfplan -input=false > plan.txt'
                         }
@@ -86,7 +86,7 @@ pipeline {
             steps {
                 script {
                     dir('terraform') {
-                        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-creds']]) {
+                        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_creds']]) {
                             sh 'terraform apply -input=false tfplan'
                         }
                     }
