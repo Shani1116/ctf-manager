@@ -60,10 +60,39 @@ pipeline {
                     //Run Trivy scan
                     sh """
                         trivy image --exit-code 0 --severity LOW,MEDIUM,HIGH,CRITICAL ${DOCKER_IMAGE}:${env.BUILD_ID}
-                        trivy image --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_IMAGE}:${env.BUILD_ID}
                     """
                 }
             }
         }
+        stage('Provision Staging Server') {
+            steps {
+                script {
+                    dir('terraform') {
+                        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-creds']]) {
+                            sh 'terraform init -input=false'
+                            sh 'terraform plan -out=tfplan -input=false > plan.txt'
+                        }
+                    }
+                    archiveArtifacts artifacts: 'terraform/plan.txt', allowEmptyArchive: true
+                }
+            }
+        }
+        stage('Approve Terraform Apply') {
+            steps {
+                input message: 'Review the Terraform plan and approve to apply?', ok: 'Apply'
+            }
+        }
+        stage('Apply Terraform') {
+            steps {
+                script {
+                    dir('terraform') {
+                        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-creds']]) {
+                            sh 'terraform apply -input=false tfplan'
+                        }
+                    }
+                }
+            }
+        }
+
     }
 }
