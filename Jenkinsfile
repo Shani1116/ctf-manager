@@ -71,45 +71,14 @@ pipeline {
         //         }
         //     }
         // }
-        stage('Provision Staging Server') {
-            steps {
-                script {
-                    dir('terraform') {
-                        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_creds']]) {
-                            sh 'terraform workspace select staging || terraform workspace new staging'
-                            sh 'terraform init -input=false'
-                            sh 'terraform plan -input=false -out=tfplan -var="environment=staging" > plan.txt'
-                        }
-                    }
-                    archiveArtifacts artifacts: 'terraform/plan.txt', allowEmptyArchive: true
-                }
-            }
-        }
-        stage('Approve Staging Apply') {
-            steps {
-                input message: 'Review the Terraform plan and approve to apply?', ok: 'Apply'
-            }
-        }
-        stage('Apply Staging Terraform') {
-            steps {
-                script {
-                    dir('terraform') {
-                        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_creds']]) {
-                            sh 'terraform apply -input=false tfplan'
-                        }
-                    }
-                }
-            }
-        }
         stage('Deploy to Staging') {
             steps {
                 script {
-                    def STG_EC2_IP = sh(script: "cd terraform && terraform workspace select staging && terraform output -raw public_ip", returnStdout: true).trim()
-                    echo "Deploying app to EC2 at ${STG_EC2_IP}"
+                    echo "Deploying app to EC2 at ${env.STG_EC2_IP}"
 
                     sshagent(['ec2-staging-key']) {
                         sh """
-                            ssh -o StrictHostKeyChecking=no ubuntu@${STG_EC2_IP} '
+                            ssh -o StrictHostKeyChecking=no ubuntu@${env.STG_EC2_IP} '
                                 aws ecr get-login-password --region ap-southeast-2 \
                                 | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com &&
                                 docker rm -f ctf-manager-staging || true &&
@@ -121,45 +90,14 @@ pipeline {
                 }
             }
         }
-        stage('Provision Production Server') {
-            steps {
-                script {
-                    dir('terraform') {
-                        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_creds']]) {
-                            sh 'terraform workspace select prod || terraform workspace new prod'
-                            sh 'terraform init -input=false'
-                            sh 'terraform plan -out=tfplan -input=false -var="environment=prod" > plan.txt'
-                        }
-                    }
-                    archiveArtifacts artifacts: 'terraform/plan.txt', allowEmptyArchive: true
-                }
-            }
-        }
-        stage('Approve Production Apply') {
-            steps {
-                input message: 'Review the Terraform plan and approve to apply?', ok: 'Apply'
-            }
-        }
-        stage('Apply Production Terraform') {
-            steps {
-                script {
-                    dir('terraform') {
-                        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_creds']]) {
-                            sh 'terraform apply -input=false tfplan'
-                        }
-                    }
-                }
-            }
-        }
         stage('Deploy to Production') {
             steps {
                 script {
-                    def PROD_EC2_IP = sh(script: "cd terraform && terraform workspace select prod && terraform output -raw public_ip", returnStdout: true).trim()
-                    echo "Deploying app to EC2 at ${PROD_EC2_IP}"
+                    echo "Deploying app to EC2 at ${env.PROD_EC2_IP}"
 
                     sshagent(['ec2-staging-key']) {
                         sh """
-                            ssh -o StrictHostKeyChecking=no ubuntu@${PROD_EC2_IP} '
+                            ssh -o StrictHostKeyChecking=no ubuntu@${env.PROD_EC2_IP} '
                                 aws ecr get-login-password --region ap-southeast-2 \
                                 | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com &&
                                 docker rm -f ctf-manager-prod || true &&
