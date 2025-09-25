@@ -14,6 +14,13 @@ pipeline {
             steps {
                 script {
                     docker.build("${DOCKER_IMAGE}:${env.BUILD_ID}")
+
+                    sh "aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com"
+
+                    sh """
+                        docker tag ${DOCKER_IMAGE}:${env.BUILD_ID} ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/${DOCKER_IMAGE}:${env.BUILD_ID}
+                        docker push ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/${DOCKER_IMAGE}:${env.BUILD_ID}
+                    """
                 }
             }
         }
@@ -94,5 +101,23 @@ pipeline {
             }
         }
 
+        stage('Deploy to Staging') {
+            steps {
+                script {
+                    def EC2_IP = sh(script: "cd terraform && terraform output -raw staging_public_ip", returnStdout: true).trim()
+                    echo "Deploying app to EC2 at ${EC2_IP}"
+
+                    sshagent(['ec2-staging-key']) {
+                        sh """
+                            ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} '
+                                docker rm -f ctf-manager-staging || true &&
+                                docker pull <dockerhub-username>/ctf-manager:latest &&
+                                docker run -d --name ctf-manager-staging -p 8000:8000 <dockerhub-username>/ctf-manager:latest
+                            '
+                        """
+                    }
+                }
+            }
+        }
     }
 }

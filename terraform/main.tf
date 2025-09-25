@@ -41,3 +41,7 @@ resource "aws_instance" "staging" {
     Name = "ctf-manager-staging"
   }
 }
+
+output "staging_public_ip" {
+  value = aws_instance.staging.public_ip
+}
