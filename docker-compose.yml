@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  ctf-manager-prod:
+    image: "${AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/ctf-manager:${BUILD_ID}"
+    container_name: ctf-manager-prod
+    ports:
+      - "8000:8000"
+    restart: always
+    labels:  
+      com.datadoghq.tags.env: "production"
+      com.datadoghq.tags.service: "ctf-manager"
+      com.datadoghq.tags.version: "${BUILD_ID}"
+
+  datadog-agent:
+    image: "gcr.io/datadoghq/agent:latest" 
+    container_name: datadog-agent
+    environment:
+      - DD_API_KEY=${DD_API_KEY}            
+      - DD_SITE=datadoghq.com              
+      - DD_ENV=production
+      - DD_CONTAINER_EXCLUDE=name:datadog-agent 
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
+    restart: always

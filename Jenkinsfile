@@ -3,6 +3,7 @@ pipeline {
     environment {
         DOCKER_IMAGE = "ctf-manager"
         SCANNER_HOME = tool 'SonarScanner'
+        DD_API_KEY = credentials('DD_API_KEY')
     }
     stages {
         stage('Checkout') {
@@ -71,32 +72,42 @@ pipeline {
         //         }
         //     }
         // }
-        stage('Deploy to Staging') {
-            steps {
-                script {
-                    echo "Deploying app to EC2 at ${env.STG_EC2_IP}"
+        // stage('Deploy to Staging') {
+        //     steps {
+        //         script {
+        //             echo "Deploying app to EC2 at ${env.STG_EC2_IP}"
 
-                    sshagent(['ec2-staging-key']) {
-                        sh """
-                            ssh -o StrictHostKeyChecking=no ubuntu@${env.STG_EC2_IP} '                             
-                                docker pull ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/ctf-manager:${env.BUILD_ID}
-                                docker run -d --name ctf-manager-staging -p 8000:8000 ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/ctf-manager:${env.BUILD_ID}
-                            '
-                        """
-                    }
-                }
-            }
-        }
+        //             sshagent(['ec2-staging-key']) {
+        //                 sh """
+        //                     ssh -o StrictHostKeyChecking=no ubuntu@${env.STG_EC2_IP} '                             
+        //                         docker pull ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/ctf-manager:${env.BUILD_ID}
+        //                         docker run -d --name ctf-manager-staging -p 8000:8000 ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/ctf-manager:${env.BUILD_ID}
+        //                     '
+        //                 """
+        //             }
+        //         }
+        //     }
+        // }
         stage('Deploy to Production') {
             steps {
                 script {
                     echo "Deploying app to EC2 at ${env.PROD_EC2_IP}"
-
+                    sh """
+                        echo "AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}" > .env
+                        echo "BUILD_ID=${BUILD_ID}" >> .env
+                        echo "DD_API_KEY=${DD_API_KEY}" >> .env
+                    """
+                    
                     sshagent(['ec2-staging-key']) {
                         sh """
-                            ssh -o StrictHostKeyChecking=no ubuntu@${env.PROD_EC2_IP} '
-                                docker pull ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/ctf-manager:${env.BUILD_ID}
-                                docker run -d --name ctf-manager-prod -p 8000:8000 ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/ctf-manager:${env.BUILD_ID}
+                        scp -o StrictHostKeyChecking=no \
+                        docker-compose.yml .env ubuntu@${env.PROD_EC2_IP}:/home/ubuntu/ctf-manager/
+
+                        ssh -o StrictHostKeyChecking=no ubuntu@${env.PROD_EC2_IP} '
+                            cd /home/ubuntu/ctf-manager &&
+                            docker compose down &&
+                            docker compose pull &&
+                            docker compose up -d
                             '
                         """
                     }
