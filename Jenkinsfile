@@ -11,20 +11,20 @@ pipeline {
                 git url: 'https://github.com/Shani1116/ctf-manager.git', branch: 'master'
             }
         }
-        stage('Build') {
-            steps {
-                script {
-                    docker.build("${DOCKER_IMAGE}:${env.BUILD_ID}")
+        // stage('Build') {
+        //     steps {
+        //         script {
+        //             docker.build("${DOCKER_IMAGE}:${env.BUILD_ID}")
 
-                    sh "aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com"
+        //             sh "aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com"
 
-                    sh """
-                        docker tag ${DOCKER_IMAGE}:${env.BUILD_ID} ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/${DOCKER_IMAGE}:${env.BUILD_ID}
-                        docker push ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/${DOCKER_IMAGE}:${env.BUILD_ID}
-                    """
-                }
-            }
-        }
+        //             sh """
+        //                 docker tag ${DOCKER_IMAGE}:${env.BUILD_ID} ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/${DOCKER_IMAGE}:${env.BUILD_ID}
+        //                 docker push ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/${DOCKER_IMAGE}:${env.BUILD_ID}
+        //             """
+        //         }
+        //     }
+        // }
         // stage('Test') {
         //     steps {
         //         script {
@@ -94,7 +94,7 @@ pipeline {
                     echo "Deploying app to EC2 at ${env.PROD_EC2_IP}"
                     sh """
                         echo "AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}" > .env
-                        echo "BUILD_ID=${BUILD_ID}" >> .env
+                        echo "BUILD_ID=45" >> .env
                         echo "DD_API_KEY=${DD_API_KEY}" >> .env
                     """
                     
