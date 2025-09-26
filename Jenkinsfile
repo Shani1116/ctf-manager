@@ -88,10 +88,40 @@ pipeline {
         //         }
         //     }
         // }
+        stage('Provision Production Server') {
+            steps {
+                script {
+                    dir('terraform/prod') {
+                        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_creds']]) {
+                            sh 'terraform init -input=false'
+                            sh 'terraform plan -out=tfplan -input=false > plan.txt'
+                        }
+                    }
+                    archiveArtifacts artifacts: 'terraform/prod/plan.txt', allowEmptyArchive: true
+                }
+            }
+        }
+        stage('Approve Production Apply') {
+            steps {
+                input message: 'Review the Terraform plan and approve to apply?', ok: 'Apply'
+            }
+        }
+        stage('Apply Production Terraform') {
+            steps {
+                script {
+                    dir('terraform/prod') {
+                        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_creds']]) {
+                            sh 'terraform apply -input=false tfplan'
+                        }
+                    }
+                }
+            }
+        }
         stage('Deploy to Production') {
             steps {
                 script {
-                    echo "Deploying app to EC2 at ${env.PROD_EC2_IP}"
+                    def PROD_EC2_IP = sh(script: "cd terraform/prod && terraform output -raw public_ip", returnStdout: true).trim()
+                    echo "Deploying app to EC2 at ${PROD_EC2_IP}"
                     sh """
                         echo "AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}" > .env
                         echo "BUILD_ID=45" >> .env
@@ -101,9 +131,9 @@ pipeline {
                     sshagent(['ec2-staging-key']) {
                         sh """
                         scp -o StrictHostKeyChecking=no \
-                        docker-compose.yml .env ubuntu@${env.PROD_EC2_IP}:/home/ubuntu/ctf-manager/
+                        docker-compose.yml .env ubuntu@${PROD_EC2_IP}:/home/ubuntu/ctf-manager/
 
-                        ssh -o StrictHostKeyChecking=no ubuntu@${env.PROD_EC2_IP} '
+                        ssh -o StrictHostKeyChecking=no ubuntu@${PROD_EC2_IP} '
                             cd /home/ubuntu/ctf-manager &&
                             docker compose down &&
                             docker compose pull &&
