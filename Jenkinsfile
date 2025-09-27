@@ -52,8 +52,16 @@ pipeline {
                             -Dsonar.sources=. \
                             -Dsonar.host.url=https://sonarcloud.io
                         """
-                    }  
-                }
+                        // Wait for SonarCloud Quality Gate result
+                        // timeout(time: 5, unit: 'MINUTES') {
+                        // def qg = waitForQualityGate()
+                        //     if (qg.status != 'OK') {
+                        //         echo "SonarQube Quality Gate failed: ${qg.status}"
+                        //         currentBuild.result = 'UNSTABLE'
+                        //     }
+                        // }
+                    }
+                }    
             }
         }
         stage('Security') {
@@ -69,6 +77,7 @@ pipeline {
                     sh """
                         trivy image --exit-code 0 --severity LOW,MEDIUM,HIGH,CRITICAL ${DOCKER_IMAGE}:${env.BUILD_ID}
                     """
+                    //trivy image --exit-code 1 --severity HIGH,CRITICAL ${DOCKER_IMAGE}:${env.BUILD_ID}
                 }
             }
         }
