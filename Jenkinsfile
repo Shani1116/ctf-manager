@@ -90,7 +90,7 @@ pipeline {
                         sh """
                             ssh -o StrictHostKeyChecking=no ubuntu@${env.STG_EC2_IP} '                             
                                 docker pull ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/ctf-manager:${env.BUILD_ID}
-                                docker run -d --name ctf-manager-staging -p 8000:8000 ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/ctf-manager:${env.BUILD_ID}
+                                docker run -d --name ctf-manager-${env.BUILD_ID} -p 8000:8000 ${env.AWS_ACCOUNT_ID}.dkr.ecr.ap-southeast-2.amazonaws.com/ctf-manager:${env.BUILD_ID}
                             '
                         """
                     }
